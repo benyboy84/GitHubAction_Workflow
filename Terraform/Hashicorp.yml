@@ -4,8 +4,10 @@
 # `terraform apply`. If the event is a pull request, a comment will be addded.
 # 
 # Prerequisites:
-# - A GitHub account
 # - An Azure account and Azure Access Credentials
+# Or
+# - An AWS account and AWS Access Credentials
+#
 # Opional:
 # - A Terraform Cloud account
 #
@@ -44,6 +46,7 @@ jobs:
     name: "Terraform"
     runs-on: ubuntu-latest
     steps:
+    
       - name: Checkout
         uses: actions/checkout@v3
 
