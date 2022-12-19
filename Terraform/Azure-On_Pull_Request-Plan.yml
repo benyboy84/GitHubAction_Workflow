@@ -1,19 +1,20 @@
 # This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
 # with an API token for Terraform Cloud (app.terraform.io) - if required. On pull request, this workflow will run 
-# `terraform plan` (speculative plan via Terraform Cloud) and add a comment to the pull request with the plan.
+# `terraform fmt`, `terraform validate` and `terraform plan` (speculative plan via Terraform Cloud) and add a comment 
+# to the pull request with the plan.
 # 
 # Prerequisites:
-# - A GitHub account
 # - An Azure account and Azure Access Credentials
 #
 # Opional:
-# - A Terraform Cloud account: 
-#   "API-driven workflow" Workspace.
-#   Environment Variables for your workspace with their respective values.
-#   - ARM_CLIENT_ID
-#   - ARM_CLIENT_SECRET
-#   - ARM_SUBSCRIPTION_ID
-#   - ARM_TENANT_ID
+# - A Terraform Cloud account
+#
+# "API-driven workflow" Workspace.
+# Environment Variables for your workspace with their respective values.
+# - ARM_CLIENT_ID
+# - ARM_CLIENT_SECRET
+# - ARM_SUBSCRIPTION_ID
+# - ARM_TENANT_ID
 #
 # Terraform Cloud user API token stored as a GitHub secret (e.g. TF_API_TOKEN) in the repository.
 #   Documentation:
@@ -27,22 +28,21 @@
 #       with:
 #         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-name: "Terraform"
+name: "Terraform - Pull Request"
 
 on:
   pull_request:
 
 jobs:
-  terraform:
-    name: "Terraform Plan"
+  terraform-pull_request:
+    name: "Terraform - Pull Request"
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}               # Can be configured in Terraform Cloud
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}       # Can be configured in Terraform Cloud
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}   # Can be configured in Terraform Cloud
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}               # Can be configured in Terraform Cloud
     steps:
 
       - name: Checkout
@@ -51,7 +51,6 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.3.6
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
           terraform_wrapper: false
 
@@ -63,18 +62,17 @@ jobs:
           Recursive: true
           Comment: true
 
-#      - name: Terraform Init
-#        id: init
-#        run: terraform init
-#        shell: bash
-
       - name: Terraform Validate
         id: validate
         uses: benyboy84/GitHubAction_terraform-validate@v1.0.0
 
-#      - name: Terraform Plan
-#        id: plan
-#        uses: benyboy84/GitHubAction_terraform-plan@v1.0.0
-#        with:
-#          Github_Token: ${{ secrets.GITHUB_TOKEN }}
-#          Out: terraform.tfplan
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        
+      - name: Terraform Plan
+        id: plan
+        uses: benyboy84/GitHubAction_terraform-plan@v1.0.0
+        with:
+          GitHub_Token: ${{ secrets.GITHUB_TOKEN }}
+          Out: terraform.tfplan
