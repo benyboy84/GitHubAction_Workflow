@@ -1,0 +1,39 @@
+name: Terraform Plan
+
+on:
+  issue_comment:
+    types: created
+
+jobs:
+  plan:
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, 'terraform plan') }}
+    runs-on: terraform
+    name: Create terraform plan
+    environment: prod 
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }} 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        
+      - name: terraform fmt
+        id: fmt
+        uses: CCOE-Azure-Terraform/github-action-tf-fmt@v1.0.0
+        with:
+          Recursive: true
+          Comment: true
+          GitHub_Token: ${{ github.token }}
+
+      - name: terraform init
+        id: init
+        run: terraform init
+        
+      - name: terraform plan
+        id: plan
+        uses: CCOE-Azure-Terraform/github-action-tf-plan@v1.0.0
+        with:
+          GitHub_Token: ${{ github.token }}
+          Out: terraform.tfplan
