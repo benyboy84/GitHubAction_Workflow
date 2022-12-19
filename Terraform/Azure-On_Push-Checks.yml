@@ -1,0 +1,93 @@
+# This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
+# with an API token for Terraform Cloud (app.terraform.io) - if required. On push events on branch other than `main`, 
+# this workflow will run `terraform fmt` and `terraform validate`. If the event is a pull request, a comment will be addded.
+# 
+# Prerequisites:
+# - A GitHub account
+# - An Azure account and Azure Access Credentials
+#
+# Opional:
+# - A Terraform Cloud account: 
+#   "API-driven workflow" Workspace.
+#   Environment Variables for your workspace with their respective values.
+#   - ARM_CLIENT_ID
+#   - ARM_CLIENT_SECRET
+#   - ARM_SUBSCRIPTION_ID
+#   - ARM_TENANT_ID
+#
+# Terraform Cloud user API token stored as a GitHub secret (e.g. TF_API_TOKEN) in the repository.
+#   Documentation:
+#     - https://www.terraform.io/docs/cloud/users-teams-organizations/api-tokens.html
+#     - https://help.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets
+#
+# GitHub secret in step `Setup Terraform`.
+#   Example:
+#     - name: Setup Terraform
+#       uses: hashicorp/setup-terraform@v1
+#       with:
+#         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+name: "Terraform"
+
+on:
+  push:
+    branches: 
+      - '*'         # matches every branch that doesn't contain a '/'
+      - '*/*'       # matches every branch containing a single '/'
+      - '**'        # matches every branch
+      - '!master'   # excludes master
+
+jobs:
+  terraform-fmt:
+    name: "Terraform Format"
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}               # Can be configured in Terraform Cloud
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}       # Can be configured in Terraform Cloud
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}   # Can be configured in Terraform Cloud
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}               # Can be configured in Terraform Cloud
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_wrapper: false
+
+      - name: Terraform Format
+        id: fmt
+        uses: benyboy84/GitHubAction_terraform-fmt@v1.0.0
+        with:
+          Github_Token: ${{ secrets.GITHUB_TOKEN }}
+          Recursive: true
+          Comment: true
+
+  terraform-validate:
+    name: "Terraform Validate"
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}               # Can be configured in Terraform Cloud
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}       # Can be configured in Terraform Cloud
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}   # Can be configured in Terraform Cloud
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}               # Can be configured in Terraform Cloud
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_wrapper: false
+
+      - name: Terraform Validate
+        id: validate
+        uses: benyboy84/GitHubAction_terraform-validate@v1.0.0
