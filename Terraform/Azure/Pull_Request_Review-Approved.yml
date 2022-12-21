@@ -40,7 +40,7 @@ on:
 jobs:
   approved:
     name: Pull Request Approved
-    if: {{ github.event.review.state == 'approved' }}
+    if: ${{ github.event.review.state == 'approved' }}
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
