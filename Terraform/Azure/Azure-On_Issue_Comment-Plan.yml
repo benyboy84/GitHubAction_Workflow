@@ -1,7 +1,9 @@
 # This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
-# with an API token for Terraform Cloud (app.terraform.io) - if required. On pull request, this workflow will run 
-# `terraform fmt`, `terraform validate` and `terraform plan` (speculative plan via Terraform Cloud) and add a comment 
-# to the pull request with the plan.
+# with an API token for Terraform Cloud (app.terraform.io) - if required. On issue comment, if the comment is `terraform plan`,
+# this workflow will use the GitHub Action `GitHubAction_terraform-plan` to run `terraform plan` (speculative plan via Terraform 
+# Cloud).
+#   Documentation
+#     - https://github.com/benyboy84/GitHubAction_terraform-plan
 # 
 # Prerequisites:
 # - An Azure account and Azure Access Credentials
@@ -28,17 +30,19 @@
 #       with:
 #         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-name: "Terraform - Pull Request"
+name: Terraform Plan - Comment
 
 on:
-  pull_request:
+  issue_comment:
+    types: created
 
 jobs:
-  terraform-pull_request:
-    name: "Terraform - Pull Request"
+
+  terraform-plan:
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, 'terraform plan') }}
+    name: Terraform Plan
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}               # Can be configured in Terraform Cloud
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}       # Can be configured in Terraform Cloud
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}   # Can be configured in Terraform Cloud
@@ -54,17 +58,10 @@ jobs:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
           terraform_wrapper: false
 
-      - name: Terraform Format
-        id: fmt
-        uses: benyboy84/GitHubAction_terraform-fmt@v1.0.0
-        with:
-          Github_Token: ${{ secrets.GITHUB_TOKEN }}
-          Recursive: true
-          Comment: true
-
-      - name: Terraform Validate
-        id: validate
-        uses: benyboy84/GitHubAction_terraform-validate@v1.0.0
+      - name: Checkout Pull Request
+        run: hub pr checkout ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Terraform Init
         id: init
