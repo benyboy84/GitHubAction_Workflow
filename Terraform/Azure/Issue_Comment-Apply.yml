@@ -1,8 +1,11 @@
 # This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
-# with an API token for Terraform Cloud (app.terraform.io) - if required. On pull request, this workflow will run 
-# `terraform fmt`, `terraform validate` and `terraform plan` (speculative plan via Terraform Cloud) and add a comment 
-# to the pull request with the plan.
-# 
+# with an API token for Terraform Cloud (app.terraform.io) - if required. On issue comment, if the comment is `terraform apply`,
+# this workflow will use the GitHub Action `GitHubAction_terraform-plan` to run `terraform plan` (speculative plan via Terraform Cloud) 
+# and use the the GitHub Action `GitHubAction_terraform-apply` and run `terraform apply`.
+#   Documentation
+#     - https://github.com/benyboy84/GitHubAction_terraform-plan
+#     - https://github.com/benyboy84/GitHubAction_terraform-apply
+#
 # Prerequisites:
 # - An Azure account and Azure Access Credentials
 #
@@ -28,43 +31,37 @@
 #       with:
 #         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-name: "Terraform - Pull Request"
+name: Terraform Apply - Issue_Comment
 
 on:
-  pull_request:
+  issue_comment:
+    types: created
 
 jobs:
-  terraform-pull_request:
-    name: "Terraform - Pull Request"
+  terraform-apply:
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, 'terraform apply') }}
+    name: Terraform Apply - Comment
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}               # Can be configured in Terraform Cloud
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}       # Can be configured in Terraform Cloud
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}   # Can be configured in Terraform Cloud
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}               # Can be configured in Terraform Cloud
     steps:
-
+    
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Checkout Pull Request
+        run: hub pr checkout ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
           terraform_wrapper: false
-
-      - name: Terraform Format
-        id: fmt
-        uses: benyboy84/GitHubAction_terraform-fmt@v1.0.0
-        with:
-          Github_Token: ${{ secrets.GITHUB_TOKEN }}
-          Recursive: true
-          Comment: true
-
-      - name: Terraform Validate
-        id: validate
-        uses: benyboy84/GitHubAction_terraform-validate@v1.0.0
 
       - name: Terraform Init
         id: init
@@ -76,3 +73,10 @@ jobs:
         with:
           GitHub_Token: ${{ secrets.GITHUB_TOKEN }}
           Out: terraform.tfplan
+
+      - name: Terraform Apply
+        id: apply
+        uses: benyboy84/GitHubAction_terraform-apply@v1.0.0
+        with:
+          Github_Token: ${{ secrets.GITHUB_TOKEN }}
+          Plan: terraform.tfplan

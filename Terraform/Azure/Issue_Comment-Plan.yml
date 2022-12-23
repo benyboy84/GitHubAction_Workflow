@@ -1,7 +1,9 @@
 # This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
 # with an API token for Terraform Cloud (app.terraform.io) - if required. On issue comment, if the comment is `terraform plan`,
-# this workflow will run `terraform plan` (speculative plan via Terraform Cloud) and add a comment to the pull request with 
-# the plan.
+# this workflow will use the GitHub Action `GitHubAction_terraform-plan` to run `terraform plan` (speculative plan via Terraform 
+# Cloud).
+#   Documentation
+#     - https://github.com/benyboy84/GitHubAction_terraform-plan
 # 
 # Prerequisites:
 # - An Azure account and Azure Access Credentials
@@ -28,7 +30,7 @@
 #       with:
 #         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-name: Terraform Plan - Comment
+name: Terraform Plan - Issue_Comment
 
 on:
   issue_comment:
@@ -45,9 +47,14 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}   # Can be configured in Terraform Cloud
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}               # Can be configured in Terraform Cloud
     steps:
-    
+
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Checkout Pull Request
+        run: hub pr checkout ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2

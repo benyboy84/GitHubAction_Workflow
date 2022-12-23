@@ -1,0 +1,64 @@
+# This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
+# with an API token for Terraform Cloud (app.terraform.io) - if required. On issue comment, if the comment is `terraform apply`,
+# this workflow will use the GitHub Action `GitHubAction_terraform-plan` to run `terraform plan` (speculative plan via Terraform Cloud) 
+# and use the the GitHub Action `GitHubAction_terraform-apply` and run `terraform apply`.
+#   Documentation
+#     - https://github.com/benyboy84/GitHubAction_terraform-plan
+#     - https://github.com/benyboy84/GitHubAction_terraform-apply
+#
+# Prerequisites:
+# - An Azure account and Azure Access Credentials
+#
+# Opional:
+# - A Terraform Cloud account
+#
+# "API-driven workflow" Workspace.
+# Environment Variables for your workspace with their respective values.
+# - ARM_CLIENT_ID
+# - ARM_CLIENT_SECRET
+# - ARM_SUBSCRIPTION_ID
+# - ARM_TENANT_ID
+#
+# Terraform Cloud user API token stored as a GitHub secret (e.g. TF_API_TOKEN) in the repository.
+#   Documentation:
+#     - https://www.terraform.io/docs/cloud/users-teams-organizations/api-tokens.html
+#     - https://help.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets
+#
+# GitHub secret in step `Setup Terraform`.
+#   Example:
+#     - name: Setup Terraform
+#       uses: hashicorp/setup-terraform@v1
+#       with:
+#         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+name: Pull Request Approved - Issue_Comment
+
+on:
+  pull_request_review:
+    types: submitted
+
+jobs:
+  approved:
+    name: Pull Request Approved
+    if: ${{ github.event.review.state == 'approved' }}
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+
+      - name: Print GitHub context
+        run: echo "$GITHUB_CONTEXT"
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+
+#      - name: Add Pull Request Comment
+#        id: init
+#        run: |
+#          ACCEPT_HEADER="Accept: application/vnd.github.v3+json"
+#          AUTH_HEADER="Authorization: token $GITHUB_TOKEN"
+#          CONTENT_HEADER="Content-Type: application/json"
+#          PR_COMMENTS_URL=$(jq -r ".issue.comments_url" "$GITHUB_EVENT_PATH")
+#          PR_COMMENT_URI=$(jq -r ".repository.issue_comment_url" "$GITHUB_EVENT_PATH" | sed "s|{/number}||g")
+#          PR_COMMENT=""
+#          PR_PAYLOAD=$(echo '{}' | jq --arg body "$PR_COMMENT" '.body = $body')
+#          curl -sS -X POST -H "$AUTH_HEADER" -H "$ACCEPT_HEADER" -H "$CONTENT_HEADER" -d "$PR_PAYLOAD" -L "$PR_COMMENTS_URL" > /dev/null

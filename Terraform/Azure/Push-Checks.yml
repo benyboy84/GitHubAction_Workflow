@@ -1,6 +1,10 @@
 # This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
 # with an API token for Terraform Cloud (app.terraform.io) - if required. On push events on branch other than `main`, 
-# this workflow will run `terraform fmt` and `terraform validate`.
+# this workflow will use the GitHub Action `GitHubAction_terraform-fmt` to run `terraform fmt`, `GitHubAction_terraform-validate` 
+# to run `terraform validate`.
+#   Documentation
+#     - https://github.com/benyboy84/GitHubAction_terraform-fmt
+#     - https://github.com/benyboy84/GitHubAction_terraform-validate
 # 
 # Prerequisites:
 # - An Azure account and Azure Access Credentials
@@ -41,12 +45,6 @@ jobs:
   terraform-fmt:
     name: "Terraform Format"
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}               # Can be configured in Terraform Cloud
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}       # Can be configured in Terraform Cloud
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}   # Can be configured in Terraform Cloud
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}               # Can be configured in Terraform Cloud
     steps:
 
       - name: Checkout
@@ -75,7 +73,6 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}       # Can be configured in Terraform Cloud
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}   # Can be configured in Terraform Cloud
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}               # Can be configured in Terraform Cloud
-
     steps:
 
       - name: Checkout
