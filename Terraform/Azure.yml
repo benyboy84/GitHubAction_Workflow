@@ -42,7 +42,7 @@ on:
 jobs:
   terraform-fmt:
     name: "Terraform Format"
-    if: ${{ github.event.issue.pull_request }}
+    if: ${{ github.event.pull_request }}
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -71,7 +71,7 @@ jobs:
 
   terraform-validate:
     name: "Terraform Validate"
-    if: ${{ github.event.issue.pull_request }}
+    if: ${{ github.event.pull_request }}
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
