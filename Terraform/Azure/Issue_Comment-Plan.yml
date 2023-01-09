@@ -38,7 +38,7 @@ on:
 
 jobs:
   terraform-plan:
-    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, 'terraform plan') }}
+    if: ${{ !github.event.comment && github.event.issue.pull_request && contains(github.event.comment.body, 'terraform plan') }}
     name: Terraform Plan
     runs-on: ubuntu-latest
     env:

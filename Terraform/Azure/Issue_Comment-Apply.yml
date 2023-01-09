@@ -39,7 +39,7 @@ on:
 
 jobs:
   terraform-apply:
-    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, 'terraform apply') }}
+    if: ${{ !github.event.comment && github.event.issue.pull_request && contains(github.event.comment.body, 'terraform apply') }}
     name: Terraform Apply - Comment
     runs-on: ubuntu-latest
     env:
