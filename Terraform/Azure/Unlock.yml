@@ -1,0 +1,84 @@
+# This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
+# with an API token for Terraform Cloud (app.terraform.io) - if required. 
+# This workflow is manually triggered.
+# It will use `checkout` to download the content of the repository and then, run `terraform init` to initialize
+# the directory to finally run `terraforn force-unlock` with the `ID` supplied as an input to unlock the state
+# file.
+#   Documentation
+#     - https://github.com/actions/checkout
+# 
+# Prerequisites:
+# - An Azure account and Azure Access Credentials
+#
+# Opional:
+# - A Terraform Cloud account
+#
+# "API-driven workflow" Workspace.
+# Environment Variables for your workspace with their respective values.
+# - ARM_CLIENT_ID
+# - ARM_CLIENT_SECRET
+# - ARM_SUBSCRIPTION_ID
+# - ARM_TENANT_ID
+#
+# Terraform Cloud user API token stored as a GitHub secret (e.g. TF_API_TOKEN) in the repository.
+#   Documentation:
+#     - https://www.terraform.io/docs/cloud/users-teams-organizations/api-tokens.html
+#     - https://help.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets
+#
+# GitHub secret in step `Setup Terraform`.
+#   Example:
+#     - name: Setup Terraform
+#       uses: hashicorp/setup-terraform@v1
+#       with:
+#         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+name: "Terraform - Unlock State File"
+
+on:
+  workflow_dispatch:
+    inputs:
+      lock_id:
+        description: Terraform state file lock ID.
+        required: true
+        type: string
+      runner:
+        description: Label of the runner to use.
+        required: false
+        default: 'self-hosted'
+        type: string
+      environment:
+        description: The environment on which to run the workflow..
+        required: false
+        type: environment
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-unlock:
+    name: Terraform Unlock
+    runs-on: ${{ github.event.inputs.runner}}
+    environment: ${{ github.event.inputs.environment}}
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}               # Can be configured in Terraform Cloud
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}       # Can be configured in Terraform Cloud
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}   # Can be configured in Terraform Cloud
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}               # Can be configured in Terraform Cloud
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Unlock
+        id: unlock
+        run: terraform force-unlock -force ${{ github.event.inputs.lock_id }} 
