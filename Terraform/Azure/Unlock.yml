@@ -1,9 +1,11 @@
 # This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
-# with an API token for Terraform Cloud (app.terraform.io) - if required. On issue comment, if the comment is `terraform plan`,
-# this workflow will use the GitHub Action `GitHubAction_terraform-plan` to run `terraform plan` (speculative plan via Terraform 
-# Cloud).
+# with an API token for Terraform Cloud (app.terraform.io) - if required. 
+# This workflow is manually triggered.
+# It will use `checkout` to download the content of the repository and then, run `terraform init` to initialize
+# the directory to finally run `terraforn force-unlock` with the `ID` supplied as an input to unlock the state
+# file.
 #   Documentation
-#     - https://github.com/benyboy84/GitHubAction_terraform-plan
+#     - https://github.com/actions/checkout
 # 
 # Prerequisites:
 # - An Azure account and Azure Access Credentials
@@ -30,17 +32,33 @@
 #       with:
 #         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-name: Terraform Plan - Issue_Comment
+name: "Terraform - Unlock State File"
 
 on:
-  issue_comment:
-    types: created
+  workflow_dispatch:
+    inputs:
+      lock_id:
+        description: Terraform state file lock ID.
+        required: true
+        type: string
+      runner:
+        description: Label of the runner to use.
+        required: false
+        default: 'self-hosted'
+        type: string
+      environment:
+        description: The environment on which to run the workflow..
+        required: false
+        type: environment
+
+permissions:
+  contents: read
 
 jobs:
-  terraform-plan:
-    if: ${{ !github.event.comment && github.event.issue.pull_request && contains(github.event.comment.body, 'terraform plan') }}
-    name: Terraform Plan
-    runs-on: ubuntu-latest
+  terraform-unlock:
+    name: Terraform Unlock
+    runs-on: ${{ github.event.inputs.runner}}
+    environment: ${{ github.event.inputs.environment}}
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}               # Can be configured in Terraform Cloud
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}       # Can be configured in Terraform Cloud
@@ -51,11 +69,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Checkout Pull Request
-        run: hub pr checkout ${{ github.event.issue.number }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -65,10 +78,7 @@ jobs:
       - name: Terraform Init
         id: init
         run: terraform init
-        
-      - name: Terraform Plan
-        id: plan
-        uses: benyboy84/GitHubAction_terraform-plan@v1.0.0
-        with:
-          GitHub_Token: ${{ secrets.GITHUB_TOKEN }}
-          Out: terraform.tfplan
+
+      - name: Terraform Unlock
+        id: unlock
+        run: terraform force-unlock -force ${{ github.event.inputs.lock_id }} 

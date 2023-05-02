@@ -42,7 +42,7 @@ on:
 jobs:
   terraform-fmt:
     name: "Terraform Format"
-    if: ${{ github.event.issue.pull_request || (github.event.issue.pull_request && contains(github.event.comment.body, 'terraform plan')) }}
+    if: ${{ github.event.pull_request }}
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -71,7 +71,7 @@ jobs:
 
   terraform-validate:
     name: "Terraform Validate"
-    if: ${{ github.event.issue.pull_request || (github.event.issue.pull_request && contains(github.event.comment.body, 'terraform plan')) }}
+    if: ${{ github.event.pull_request }}
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -96,7 +96,7 @@ jobs:
 
   terraform-plan:
     name: Terraform Plan
-    if: ${{ github.event.issue.pull_request || (github.event.issue.pull_request && contains(github.event.comment.body, 'terraform plan')) }}
+    if: ${{ github.event.issue.pull_request || (!github.event.comment && github.event.issue.pull_request && contains(github.event.comment.body, 'terraform plan')) }}
     runs-on: ubuntu-latest
     needs: [terraform-fmt, terraform-validate]
     env:
